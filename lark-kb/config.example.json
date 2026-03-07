@@ -1,0 +1,13 @@
+{
+  "feishu": {
+    "app_id": "cli_xxx",
+    "app_secret": "xxx",
+    "space_ids": ["spc_xxx"]
+  },
+  "ollama": {
+    "base_url": "http://localhost:11434",
+    "model": "nomic-embed-text"
+  },
+  "db_path": "~/.openclaw/lark-kb/kb.db",
+  "top_k": 3
+}
