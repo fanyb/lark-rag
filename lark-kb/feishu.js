@@ -43,6 +43,7 @@ export async function getDocContent(token, documentId) {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
   const data = await res.json()
   if (data.code === 403 || data.msg === 'forBidden') return ''
+  if (data.msg === 'field validation failed') return '' // 旧 doc 类型不支持此 API
   if (data.code !== 0) throw new Error(`getDocContent failed: ${data.msg}`)
   return data.data?.content ?? ''
 }

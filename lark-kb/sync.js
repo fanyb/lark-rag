@@ -36,6 +36,7 @@ export async function syncSpace(db, spaceId, config, feishuDeps, embedFn) {
     const chunks = chunkText(content)
     for (const chunk of chunks) {
       const embedding = await embed(chunk, config.ollama)
+      if (!embedding) { console.error(`  [skip chunk] embed failed`); continue }
       insertChunk(db, { doc_id: docId, content: chunk, embedding })
       totalChunks++
     }
