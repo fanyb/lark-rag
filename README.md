@@ -89,9 +89,49 @@ node lark-kb/index.js sync
 
 ### 6. 安装到 OpenClaw
 
+将 Skill 定义复制到 OpenClaw 的 skills 目录，并在 SKILL.md 中填入 CLI 的绝对路径：
+
 ```bash
 cp -r skills/lark-kb ~/.openclaw/workspace/skills/
 ```
+
+然后编辑 `~/.openclaw/workspace/skills/lark-kb/SKILL.md`，将其中所有 `/path/to/lark-kb/index.js` 替换为实际路径，例如：
+
+```
+/Users/yourname/lark-rag/lark-kb/index.js
+```
+
+也可以用一条命令完成替换（将 `$(pwd)` 替换成实际项目目录）：
+
+```bash
+SKILL=~/.openclaw/workspace/skills/lark-kb/SKILL.md
+sed -i '' "s|/path/to/lark-kb/index.js|$(pwd)/lark-kb/index.js|g" "$SKILL"
+```
+
+完成后重启 OpenClaw 即可生效。
+
+#### 配置飞书域名（用于生成文档链接）
+
+在 `config.json` 中加上 `feishu.host`，格式为公司飞书域名（不含 `https://`）：
+
+```json
+{
+  "feishu": {
+    "app_id": "cli_xxx",
+    "app_secret": "xxx",
+    "host": "feishu.cn",
+    "spaces": [...]
+  }
+}
+```
+
+#### 触发词
+
+安装后，用户在任意渠道发送包含以下关键词的消息即可触发 Skill：
+
+`知识库` `知识空间` `查文档` `内部文档` `wiki` `资料库` `lark-kb`
+
+发送 `/kb sync` 手动触发同步。
 
 ## CLI 用法
 
@@ -105,14 +145,6 @@ node lark-kb/index.js search "如何申请年假"
 # 查看索引状态
 node lark-kb/index.js status
 ```
-
-## OpenClaw 触发词
-
-安装 Skill 后，在任意渠道发送包含以下关键词的消息即可触发：
-
-`知识库` `知识空间` `查文档` `内部文档` `wiki` `资料库`
-
-发送 `/kb sync` 手动触发同步。
 
 ## 技术栈
 

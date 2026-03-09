@@ -24,6 +24,7 @@ export async function syncSpace(db, spaceId, config, feishuDeps, embedFn) {
       id: docId,
       title: node.title,
       url: node.url ?? '',
+      node_token: node.node_token ?? '',
       space_id: spaceId
     })
 

@@ -27,15 +27,21 @@ export function openDb(dbPath) {
       embedding FLOAT[768]
     );
   `)
+
+  // Schema migration: add node_token column if missing
+  const cols = db.prepare("PRAGMA table_info(docs)").all().map(r => r.name)
+  if (!cols.includes('node_token')) {
+    db.exec("ALTER TABLE docs ADD COLUMN node_token TEXT DEFAULT ''")
+  }
   return db
 }
 
-export function upsertDoc(db, { id, title, url, space_id }) {
+export function upsertDoc(db, { id, title, url, node_token, space_id }) {
   db.prepare(`
-    INSERT INTO docs (id, title, url, space_id, synced_at)
-    VALUES (?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET title=excluded.title, url=excluded.url, synced_at=excluded.synced_at
-  `).run(id, title, url, space_id, Date.now())
+    INSERT INTO docs (id, title, url, node_token, space_id, synced_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET title=excluded.title, url=excluded.url, node_token=excluded.node_token, synced_at=excluded.synced_at
+  `).run(id, title, url ?? '', node_token ?? '', space_id, Date.now())
 }
 
 export function deleteDocChunks(db, docId) {
@@ -59,12 +65,12 @@ export function insertChunk(db, { doc_id, content, embedding }) {
   return lastInsertRowid
 }
 
-export function searchChunks(db, queryEmbedding, topK) {
+export function searchChunks(db, queryEmbedding, topK, feishuHost) {
   const bytes = new Uint8Array(queryEmbedding.buffer)
   // sqlite-vec v0.1.6: when using JOIN, LIMIT ? is not recognized as a knn constraint;
   // use the 'k = ?' syntax in the WHERE clause instead.
   const rows = db.prepare(`
-    SELECT c.content, c.doc_id, d.title AS doc_title, d.url,
+    SELECT c.content, c.doc_id, d.title AS doc_title, d.url, d.node_token,
            v.distance AS score
     FROM vec_chunks v
     JOIN chunks c ON c.id = v.rowid
@@ -73,7 +79,11 @@ export function searchChunks(db, queryEmbedding, topK) {
     ORDER BY v.distance
   `).all(bytes, topK)
 
-  return rows.map(r => ({ ...r, score: 1 - r.score }))
+  const host = feishuHost ?? 'feishu.cn'
+  return rows.map(r => {
+    const url = r.url || (r.node_token ? `https://${host}/wiki/${r.node_token}` : '')
+    return { content: r.content, doc_id: r.doc_id, doc_title: r.doc_title, url, score: 1 - r.score }
+  })
 }
 
 export function getStatus(db) {
