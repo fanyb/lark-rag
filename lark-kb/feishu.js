@@ -21,9 +21,9 @@ export async function listNodes(token, spaceId, parentNodeToken = null) {
   return data.data?.items ?? []
 }
 
-export async function getAllNodes(token, spaceId) {
+export async function getAllNodes(token, spaceId, startNodeToken = null) {
   const nodes = []
-  const queue = [null] // null = root level
+  const queue = [startNodeToken] // null = root level, or specific node
 
   while (queue.length > 0) {
     const parentToken = queue.shift()
@@ -42,6 +42,7 @@ export async function getDocContent(token, documentId) {
   const url = `${BASE_URL}/docx/v1/documents/${documentId}/raw_content`
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
   const data = await res.json()
+  if (data.code === 403 || data.msg === 'forBidden') return ''
   if (data.code !== 0) throw new Error(`getDocContent failed: ${data.msg}`)
   return data.data?.content ?? ''
 }

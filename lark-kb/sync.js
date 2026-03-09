@@ -10,7 +10,9 @@ export async function syncSpace(db, spaceId, config, feishuDeps, embedFn) {
   const embed = embedFn ?? _embed
 
   const token = await getTenantToken(config.feishu.app_id, config.feishu.app_secret)
-  const nodes = await getAllNodes(token, spaceId)
+  const spaceConf = config.feishu.spaces?.find(s => s.space_id === spaceId)
+  const startNode = spaceConf?.node_token ?? null
+  const nodes = await getAllNodes(token, spaceId, startNode)
 
   let totalChunks = 0
 
@@ -27,6 +29,10 @@ export async function syncSpace(db, spaceId, config, feishuDeps, embedFn) {
 
     deleteDocChunks(db, docId)
 
+    if (!content) {
+      console.error(`  [skip] ${node.title} (no content)`)
+      continue
+    }
     const chunks = chunkText(content)
     for (const chunk of chunks) {
       const embedding = await embed(chunk, config.ollama)

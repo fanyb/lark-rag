@@ -28,11 +28,12 @@ const db = openDb(dbPath)
 if (command === 'sync') {
   console.error('Syncing Feishu knowledge base...')
   let totalDocs = 0, totalChunks = 0
-  for (const spaceId of config.feishu.space_ids) {
-    const result = await syncSpace(db, spaceId, config)
+  const spaces = config.feishu.spaces ?? config.feishu.space_ids.map(id => ({ space_id: id }))
+  for (const { space_id, node_token } of spaces) {
+    const result = await syncSpace(db, space_id, config)
     totalDocs += result.docs
     totalChunks += result.chunks
-    console.error(`  Space ${spaceId}: ${result.docs} docs, ${result.chunks} chunks`)
+    console.error(`  Space ${space_id}${node_token ? ' [' + node_token + ']' : ''}: ${result.docs} docs, ${result.chunks} chunks`)
   }
   console.log(JSON.stringify({ status: 'ok', docs: totalDocs, chunks: totalChunks }))
 
